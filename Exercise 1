@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <winsock2.h>
 #include <windows.h>
+#include <string.h>
+#include <stdlib.h> 
+#include <iostream>
 
 #pragma comment(lib, "ws2_32")
 #pragma warning(disable:4996)
@@ -27,19 +30,52 @@ int main()
         return 1;
     }
 
+    int action = 1;
+
+    while (action == 1)
+    {
+        printf("Insert message: \n");
+
+        char input[50];
+
+        fgets(input, sizeof(input), stdin);
+
+        const char* output = input;
+
+        send(client, output, strlen(output), 0);
+
+        if (strcmp((char*)&input, "bye") == 0)
+        {
+            action = 0;
+        }
+        fflush(stdin);
+    }
+    closesocket(client);
+
+    WSACleanup();
+
+
     // lay thong tin ve ten may
     LPSTR name[258];
     DWORD size = sizeof(name); 
     GetComputerNameA(*name,&size);
 
-    send(client,*name,strlen(*name), 0);
+    const char* computername = const_cast<LPSTR>(*name);
+    send(client,computername,strlen(*computername), 0);
 
     // lay thong tin danh sach o dia 
     LPSTR name1[258];
     DWORD size1 = sizeof(name);
     GetLogicalDriveStringsA(size1,*name1);
-    send(client, *name1, strlen(*name1), 0);
-
+    const char* diskinfo = const_cast<LPSTR>(*name1);
+    send(client, diskinfo, strlen(diskinfo), 0);
+    
+    //lay thong tin kich thuoc bo nho
+    LPCWSTR pszDrive = NULL;
+    DWORD disksCase, dwSectPerClust, dwBytesPerSect, dwFreeClusters, dwTotalClusters;
+    GetDiskFreeSpace(pszDrive,&dwSectPerClust,&dwBytesPerSect,&dwFreeClusters,&dwTotalClusters);
+    const char* diskSpace = reinterpret_cast<char*>(dwTotalClusters);
+    send(client, diskSpace, strlen(diskSpace), 0);
     closesocket(client);
 
     WSACleanup();
